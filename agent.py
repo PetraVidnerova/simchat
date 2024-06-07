@@ -63,6 +63,7 @@ class Agent():
             print(self.memory.other_agents[name])
             
             partner = f"""
+            {self.name} already knows {name}.
             {self.name} knowledge of {name}: {''.join(self.memory.other_agents[name])}
             """
         prompt += partner

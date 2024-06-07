@@ -69,7 +69,7 @@ def run(steps):
         logger.info(f"{agent1.name} meets  {agent2.name}")
         logger.info(conv)
         
-        fact = cm.summary_message(answer, agent1)
+        fact = cm.summary_message(conv, agent1)
         agent2.memory.memory.append(fact)
 
         for _ in range(6):
