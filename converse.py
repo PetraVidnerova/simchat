@@ -41,8 +41,7 @@ class ConversationModule():
         return fact 
         
     def summary_message(self, conversation, agent):
-        prompt = f"""Summarize into a short fact what
-        {agent.name} said: 
+        prompt = f"""Summarize into a short fact what {agent.name} said: 
         {conversation}
         """
         return complete(prompt)
@@ -94,4 +93,8 @@ class ConversationModule():
             return True
         if "*NO*" in answer and "*YES*" not in answer:
             return False
+#        if answer.stip()[:3].upper() == "YES":
+#            return True
+#        if answer.strip()[:2].upper() == "NO":
+#            return False
         return None

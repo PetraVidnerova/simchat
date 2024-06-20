@@ -32,6 +32,7 @@ class Agent():
         self.first_name = info["first_name"]
         self.last_name = info["last_name"]
         self.age = info["age"]
+        self.sex = info["sex"]
         self.characteristic = info["innate"]
         
         self.memory = Memory(f"{agent_dir}/memory.json")
@@ -39,26 +40,46 @@ class Agent():
     @property
     def name(self):
         return f"{self.first_name} {self.last_name}"
+
+    def introduce_yourself_det(self):
+        intro = f"""{self.name} is  {self.age} years old.
+        {self.characteristic}
+        """
+    
+        if self.memory.memory:
+            intro += f"""
+            {self.name}'s memory:
+            """
+        
+        for m in self.memory.memory:
+            intro += m
+
+        return intro
+        
     
     def introduce_yourself(self):
+        she_he = "She" if self.sex == "F" else "He"
         prompt = f"""
-        Write a short summary about {self.name}. She/he is  {self.age} years old.
-        She/he is {self.characteristic}.
-        {self.name}'s memory:
+        Write a short summary about {self.name}. {she_he} is  {self.age} years old.
+        {self.characteristic}
         """
-
+        if self.memory.memory:
+            prompt += f"""
+            {self.name}'s memory:
+            """
+        
         for m in self.memory.get_random_thoughts(5):
             prompt += m
-
 
         return complete(prompt)
 
     def start_conversation(self, name):
 
-        prompt = self.introduce_yourself() 
+        prompt = self.introduce_yourself_det() 
         
         if name not in self.memory.other_agents:
-            partner = f"{self.name} does not know {name}"
+            partner = f"""
+            {self.name} does not know {name}. """
         else:
             print(self.memory.other_agents[name])
             
@@ -70,17 +91,23 @@ class Agent():
 
         prompt += f"{self.name} starts a conversation with {name}:"
 
-        prompt += f"""Output format:
+        prompt += f"""
+        Output format:
         {self.name.upper()}: [FILL IN]""" 
+
         
         return complete(prompt)
 
     def converse(self, name, conversation):
 
-        prompt = self.introduce_yourself()
-        prompt += f"{self.name} is in the middle of short chat with {name}:"
-        prompt += f"Conversation so far: {conversation}"
-        prompt += f"""Output format:
+        prompt = self.introduce_yourself_det()
+        prompt += "\n"
+        prompt += f"{self.name} is in the middle of short chat with {name}. "
+        prompt += "Conversation so far:"
+        prompt += "\n"
+        prompt += f"{conversation}"
+        prompt += f"""
+        Output format:
         {self.name.upper()}: [FILL IN]
         """
         
@@ -88,11 +115,19 @@ class Agent():
 
 
     def inquiry(self, question):
-        prompt = self.introduce_yourself()
-        prompt += f"{self.name} memory: \n"
-        for m in self.memory.memory:
-            prompt += f"{m}\n"
 
+        prompt = """You will be given info about a person along with their memory and details.
+        """
+        prompt += self.introduce_yourself_det()
+
+        #
+        #prompt += f"{self.name} memory: \n"
+        #for m in self.memory.memory:
+        #    prompt += f"{m}\n"
+
+        prompt += "\n"
+        prompt += """Answer a question based on this information. """
+        
         prompt += question
 
         print(prompt)
