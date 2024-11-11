@@ -1,63 +1,118 @@
+from ollama import Client                                                                                   
+
+import json
 import numpy as np
 import  requests
 import time
 
-import cohere 
+import cohere
 
-def complete(prompt):
-    
-    query  = {"prompt": prompt}
-    res = requests.post("http://127.0.0.1:5000/query", json=query)
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
-    return res.json()["response"]
+class OllamaChat():
 
-
-def get_embedding(sentence):
-
-    if not sentence:                                                                                              
-        sentence = "this is blank"                                                                                  
+    def __init__(self):
+        self.theta = 0.5
+        self.client = Client(host='http://localhost:11434')
+        
+    def complete(self, prompt):
+        
+        response = self.client.chat(model='jean-luc/tiger-gemma-9b-v3:fp16', messages=[                                  
+            {                                                                                                         
+                'content': prompt,                                                                      
+                'role': 'user',                                                                                         
+            },                                                                                                        
+        ])                                                                                                          
                                                                                                             
-    query = {"sentences": [sentence]}                                                                             
-    res = requests.post("http://127.0.0.1:5000/embed", json=query)                                            
-    completion = res.json()["embeddings"]                                                                     
-    return np.array(completion[0], dtype=float)      
+        return response["message"]["content"]
 
-# with open("api_key.txt", "r") as f:
-#     openai_api_key = f.read().strip()
+    def get_embedding(self, sentence):
+       response = self.client.embed(model='jean-luc/tiger-gemma-9b-v3:fp16', input=sentence)
+       res = [float(x) for x in response["embeddings"][0]]
+       return np.array(res, dtype=float)
 
-# co = cohere.Client(openai_api_key)
 
-# def complete(prompt):
 
-#     for _ in range(10):
-#         try:
-#             completion = co.chat( 
-#                 message=prompt
-#             )
-#         except:
-#             print("chat error - sleeping")
-#             time.sleep(10)
-#             continue
+class Chat():
+
+    def __init__(self):
+        self.theta = 0.23
     
-#         return completion.text
-#     else:
-#         raise ValueError("chat error")
+    def complete(self, prompt):
+        
+        query  = {"prompt": prompt}
+        res = requests.post("http://127.0.0.1:5000/query", json=query)
 
-# def get_embedding(sentence):
-
-#     for _ in range(10):
-#         try:
-#             result = co.embed(
-#                 texts = [sentence],
-#                 model = "embed-english-v3.0",
-#                 input_type = "classification" #todo what is the best
-#             )
-#         except:
-#             print("chat error - sleeping")
-#             time.sleep(10)
-#             continue
-#         return result.embeddings[0]
-#     else:
-#         raise ValueError("chat error")
+        json_res = res.json()
+        if "response" not in json_res:
+            print(json_res)
+            raise NotImplementedError
+        
+        return json_res["response"]
 
 
+    def get_embedding(self, sentence):
+        
+        if not sentence:                                                                                              
+            sentence = "this is blank"                                                                                  
+                                                                                                            
+        query = {"sentences": [sentence]}                                                                             
+        res = requests.post("http://127.0.0.1:5000/embed", json=query)                                            
+        completion = res.json()["embeddings"]                                                                     
+        return np.array(completion[0], dtype=float)
+
+    
+class CoChat():
+        
+    def __init__(self):
+        
+        with open("api_key2.txt", "r") as f:
+            openai_api_key = f.read().strip()
+
+        self.co = cohere.Client(openai_api_key)
+        self.theta = 0.5 
+        
+    def complete(self, prompt):
+
+        for _ in range(10):
+            try:
+                completion = self.co.chat( 
+                    message=prompt
+                )
+            except:
+                print("chat error - sleeping")
+                time.sleep(10)
+                continue
+    
+            return completion.text
+        else:
+            raise ValueError("chat error")
+
+    def get_embedding(self, sentence):
+
+        for _ in range(10):
+            try:
+                result = self.co.embed(
+                    texts = [sentence],
+                    model = "embed-english-v3.0",
+                    input_type = "classification" #todo what is the best
+                )
+            except:
+                print("chat error - sleeping")
+                time.sleep(10)
+                continue
+            return result.embeddings[0]
+        else:
+            raise ValueError("chat error")
+
+
+def get_chat_interface(cohere=False):
+    if cohere:
+        chat = CoChat()
+    else:
+        chat = OllamaChat()
+    
+    return chat

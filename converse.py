@@ -1,6 +1,7 @@
+
 import numpy as np
 
-from chat_interface import complete, get_embedding
+from chat_interface import get_chat_interface
 
 THETA = 0.23
 
@@ -9,8 +10,9 @@ class ConversationModule():
     def __init__(self,
                  ending_phrases=["See you later.", "Good bye!"],
                  theta=THETA):
-        self.ending_phrases = list(map(get_embedding, ending_phrases))
-        self.theta = theta 
+        self.theta = theta
+        self.chat = get_chat_interface()
+        self.ending_phrases = list(map(self.chat.get_embedding, ending_phrases))
 
     def generate_conversation(self, agent1, agent2):
 
@@ -32,7 +34,7 @@ class ConversationModule():
         #    prompt += f"{agent1.name.upper()}: "
     
     
-        return complete(prompt) 
+        return self.chat.complete(prompt) 
 
     def _clean_fact(self, fact):
         fact = fact.strip()
@@ -44,14 +46,14 @@ class ConversationModule():
         prompt = f"""Summarize into a short fact what {agent.name} said: 
         {conversation}
         """
-        return complete(prompt)
+        return self.chat.complete(prompt)
 
     def summary(self, conversation, agent):
 
         prompt = f"""List three short facts that {agent.name}  
         has learnt from this conversation: {conversation}.
         """
-        facts =  complete(prompt)
+        facts =  self.chat.complete(prompt)
         facts = facts.split("\n")
         facts = [self._clean_fact(fact) for fact in facts]
         facts = [fact for fact in facts if fact and len(fact)>0]
@@ -62,7 +64,7 @@ class ConversationModule():
         {conversation}
         Write one fact about {agent.name.upper()}:"""
 
-        return complete(prompt)
+        return self.chat.complete(prompt)
     
     def _distance(self, a, b):
         """ cosine similarity """ 
@@ -72,17 +74,15 @@ class ConversationModule():
     
         last_sentence = conv.split(".")[-1]
         
-        emb = get_embedding(last_sentence)
+        emb = self.chat.get_embedding(last_sentence)
         
         dist = max([
             self._distance(emb, x)
             for x in self.ending_phrases
         ])
-        print(dist)
-
+        print(dist)        
         
-        
-        if dist > self.theta:
+        if dist > self.chat.theta:
             return True
         else:
             return False

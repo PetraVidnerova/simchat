@@ -1,7 +1,8 @@
 import random
 import json
 
-from chat_interface import complete
+from chat_interface import get_chat_interface
+from utils import extract_json
 
 class Memory():
     def __init__(self, memory_file):
@@ -37,6 +38,8 @@ class Agent():
         
         self.memory = Memory(f"{agent_dir}/memory.json")
 
+        self.chat = get_chat_interface()
+
     @property
     def name(self):
         return f"{self.first_name} {self.last_name}"
@@ -59,8 +62,9 @@ class Agent():
     
     def introduce_yourself(self):
         she_he = "She" if self.sex == "F" else "He"
+        her_him = "herself" if self.sex == "F" else "himself" 
         prompt = f"""
-        Write a short summary about {self.name}. {she_he} is  {self.age} years old.
+        Write a short summary that {self.name} would tell about {her_him}. Start with "I am ...".  {she_he} is  {self.age} years old.
         {self.characteristic}
         """
         if self.memory.memory:
@@ -71,47 +75,62 @@ class Agent():
         for m in self.memory.get_random_thoughts(5):
             prompt += m
 
-        return complete(prompt)
+        return self.chat.complete(prompt)
 
     def start_conversation(self, name):
 
-        prompt = self.introduce_yourself_det() 
+        prompt = self.introduce_yourself()
         
         if name not in self.memory.other_agents:
             partner = f"""
-            {self.name} does not know {name}. """
+            Imagine, I met {name}, whom I do not know. What I tell them?"""
         else:
-            print(self.memory.other_agents[name])
-            
             partner = f"""
-            {self.name} already knows {name}.
-            {self.name} knowledge of {name}: {''.join(self.memory.other_agents[name])}
+            Imagine, I met {name}, whom I already know. 
+            My knowledge of {name}: {''.join(self.memory.other_agents[name])}
+            What I tell them?
             """
         prompt += partner
 
-        prompt += f"{self.name} starts a conversation with {name}:"
-
         prompt += f"""
-        Output format:
-        {self.name.upper()}: [FILL IN]""" 
+        Output your answer in JSON, example {{"{self.name}": "<output>"}}
+        """
 
-        
-        return complete(prompt)
+        trial = 3
+        while trial:
+            answer = self.chat.complete(prompt)
+            extracted = extract_json(answer)
+            if extracted is not None:
+                return extracted
+            trial -= 1
+            print(" *** new trial *** ")
+        else:
+            return answer
 
     def converse(self, name, conversation):
 
-        prompt = self.introduce_yourself_det()
+        prompt = self.introduce_yourself()
         prompt += "\n"
-        prompt += f"{self.name} is in the middle of short chat with {name}. "
-        prompt += "Conversation so far:"
+        prompt += f"Imagine, I am in the middle of a conversation with {name}. "
+        prompt += "Here is the conversation so far:"
         prompt += "\n"
         prompt += f"{conversation}"
-        prompt += f"""
-        Output format:
-        {self.name.upper()}: [FILL IN]
+        prompt += """
+        Generate the next bit of conversaton. Use JSON, example of output {"{self.name}": "<output>"}. 
+        Do not include the previous conversation.
         """
         
-        return complete(prompt)
+        trial = 3
+        while trial:
+            answer = self.chat.complete(prompt)
+            extracted = extract_json(answer)
+            if extracted is not None:
+                return extracted
+            trial -= 1
+            print(" *** new trial *** ")
+        else:
+            return answer
+
 
 
     def inquiry(self, question):
@@ -131,7 +150,7 @@ class Agent():
         prompt += question
 
         print(prompt)
-        return complete(prompt)
+        return self.chat.complete(prompt)
     
         
     # def new_conversation(self, name):

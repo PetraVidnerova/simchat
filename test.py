@@ -143,6 +143,8 @@ def interactive_mode():
             break
 
 
+    
+    
 def experiment1():
     global filename
     
@@ -211,7 +213,7 @@ def experiment3():
 
     df = pd.DataFrame(ret_list)
     df.to_csv(f"{filename}.csv")
-        
+
 experiment3() 
 
     
