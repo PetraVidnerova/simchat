@@ -5,6 +5,8 @@ import numpy as np
 import  requests
 import time
 
+import logging
+
 import cohere
 
 import torch
@@ -12,13 +14,19 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
+from utils import create_logger
+
+logger = create_logger(__name__, filename="chat_debug.log", level=logging.DEBUG, console_output=False)
+
 class OllamaChat():
 
     def __init__(self):
-        self.theta = 0.5
+        self.theta = 0.4
         self.client = Client(host='http://localhost:11434')
         
     def complete(self, prompt):
+        
+        logger.debug(prompt)
         
         response = self.client.chat(model='jean-luc/tiger-gemma-9b-v3:fp16', messages=[                                  
             {                                                                                                         

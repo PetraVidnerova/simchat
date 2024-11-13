@@ -40,26 +40,18 @@ class Agent():
 
         self.chat = get_chat_interface()
 
+        self.my_description = None
+ 
     @property
     def name(self):
         return f"{self.first_name} {self.last_name}"
 
     def introduce_yourself_det(self):
-        intro = f"""{self.name} is  {self.age} years old.
-        {self.characteristic}
-        """
-    
-        if self.memory.memory:
-            intro += f"""
-            {self.name}'s memory:
-            """
-        
-        for m in self.memory.memory:
-            intro += m
+        if self.my_description is None:
+            self.my_description = self.introduce_yourself()
+        return self.my_description
 
-        return intro
-        
-    
+
     def introduce_yourself(self):
         she_he = "She" if self.sex == "F" else "He"
         her_him = "herself" if self.sex == "F" else "himself" 
@@ -67,27 +59,31 @@ class Agent():
         Write a short summary that {self.name} would tell about {her_him}. Start with "I am ...".  {she_he} is  {self.age} years old.
         {self.characteristic}
         """
-        if self.memory.memory:
-            prompt += f"""
-            {self.name}'s memory:
-            """
+        #if self.memory.memory:
+        #    prompt += f"""
+        #    My memory:
+        #    """
         
-        for m in self.memory.get_random_thoughts(5):
-            prompt += m
+        #for m in self.memory.get_random_thoughts(5):
+        #    prompt += m
 
         return self.chat.complete(prompt)
 
     def start_conversation(self, name):
 
-        prompt = self.introduce_yourself()
-        
+        prompt = self.introduce_yourself_det()
+
+        prompt += "This is content of my memory:\n"
+        prompt += ''.join(self.memory.memory)
+        prompt += "\n"
+
         if name not in self.memory.other_agents:
             partner = f"""
             Imagine, I met {name}, whom I do not know. What I tell them?"""
         else:
             partner = f"""
             Imagine, I met {name}, whom I already know. 
-            My knowledge of {name}: {''.join(self.memory.other_agents[name])}
+            
             What I tell them?
             """
         prompt += partner
@@ -109,14 +105,17 @@ class Agent():
 
     def converse(self, name, conversation):
 
-        prompt = self.introduce_yourself()
+        prompt = self.introduce_yourself_det()
+
+        prompt += "This is content of my memory:\n"
+        prompt += ''.join(self.memory.memory)
         prompt += "\n"
         prompt += f"Imagine, I am in the middle of a conversation with {name}. "
         prompt += "Here is the conversation so far:"
         prompt += "\n"
         prompt += f"{conversation}"
-        prompt += """
-        Generate the next bit of conversaton. Use JSON, example of output {"{self.name}": "<output>"}. 
+        prompt += f"""
+        Generate the next bit of conversaton. Use JSON, example of output {{"{self.name}": "<output>"}}. 
         Do not include the previous conversation.
         """
         
@@ -135,21 +134,19 @@ class Agent():
 
     def inquiry(self, question):
 
-        prompt = """You will be given info about a person along with their memory and details.
+        prompt = """You will be given info about myself along with my memory and details.
         """
         prompt += self.introduce_yourself_det()
 
-        #
-        #prompt += f"{self.name} memory: \n"
-        #for m in self.memory.memory:
-        #    prompt += f"{m}\n"
+        prompt += f"My memory: \n"
+        for m in self.memory.memory:
+            prompt += f"{m}\n"
 
         prompt += "\n"
         prompt += """Answer a question based on this information. """
         
         prompt += question
 
-        print(prompt)
         return self.chat.complete(prompt)
     
         

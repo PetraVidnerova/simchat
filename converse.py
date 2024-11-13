@@ -5,6 +5,7 @@ from chat_interface import get_chat_interface
 
 THETA = 0.23
 
+
 class ConversationModule():
 
     def __init__(self,
@@ -12,7 +13,8 @@ class ConversationModule():
                  theta=THETA):
         self.theta = theta
         self.chat = get_chat_interface()
-        self.ending_phrases = list(map(self.chat.get_embedding, ending_phrases))
+        self.ending_phrases = list(
+            map(self.chat.get_embedding, ending_phrases))
 
     def generate_conversation(self, agent1, agent2):
 
@@ -42,9 +44,9 @@ class ConversationModule():
             fact = fact[1:]
         return fact 
         
-    def summary_message(self, conversation, agent):
-        prompt = f"""Summarize into a short fact what {agent.name} said: 
-        {conversation}
+    def summary_message(self, conversation, agent_name):
+        prompt = f"""Summarize into a short fact what {agent_name} said: 
+        {conversation}. Use one sentence, be brief.
         """
         return self.chat.complete(prompt)
 
@@ -93,8 +95,8 @@ class ConversationModule():
             return True
         if "*NO*" in answer and "*YES*" not in answer:
             return False
-#        if answer.stip()[:3].upper() == "YES":
-#            return True
-#        if answer.strip()[:2].upper() == "NO":
-#            return False
+        if answer.strip()[:3].upper() == "YES":
+            return True
+        if answer.strip()[:2].upper() == "NO":
+            return False
         return None
